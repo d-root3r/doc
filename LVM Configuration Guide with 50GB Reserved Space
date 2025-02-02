@@ -1,0 +1,43 @@
+LVM Configuration Guide with 50GB Reserved Space
+This guide explains how to configure a 100GB disk for LVM, allocating 50GB to a Logical Volume (LV) while keeping the remaining 50GB unused in the Volume Group (VG) for future expansion.
+1. Check Available Disks
+To list all available disks, use one of the following commands:
+lsblk
+fdisk -l
+2. Create a Physical Volume (PV)
+Once you have identified the disk (e.g., /dev/sdb), initialize it as a PV:
+pvcreate /dev/sdb
+3. Create a Volume Group (VG)
+Create a Volume Group named APPVG:
+vgcreate APPVG /dev/sdb
+4. Verify the Volume Group
+To check allocated and free space in the VG:
+vgdisplay APPVG
+5. Create a Logical Volume with 50GB
+Allocate 50GB to a Logical Volume (LV) named APP_LV:
+lvcreate -L 50G -n APP_LV APPVG
+6. Format the Logical Volume
+Format the LV with ext4 filesystem:
+mkfs.ext4 /dev/APPVG/APP_LV
+7. Mount the Logical Volume
+Create a mount directory and mount the LV:
+mkdir /mnt/app
+mount /dev/APPVG/APP_LV /mnt/app
+8. Add to /etc/fstab for Persistent Mounting
+To ensure the LV mounts automatically after reboot, add the following line to /etc/fstab:
+echo "/dev/APPVG/APP_LV /mnt/app ext4 defaults 0 2" >> /etc/fstab
+9. Verify Mounting with mount -a
+After updating /etc/fstab, run the following command to verify that all defined mounts are applied:
+mount -a
+10. Check Remaining Free Space in VG
+To view used and remaining space in the VG:
+vgdisplay APPVG
+vgs
+11. Expand LV in the Future
+If you want to add the remaining 50GB to APP_LV in the future:
+lvextend -L +50G /dev/APPVG/APP_LV
+Then, resize the filesystem accordingly:
+For ext4:
+resize2fs /dev/APPVG/APP_LV
+For XFS:
+xfs_growfs /mnt/app
